@@ -5,7 +5,7 @@ import java.util.concurrent.*;
 /**
  * Implements a multi-token semaphore.
  * 
- * @author: Ella Borgin, Jim Stock
+ * @author: Joshua Hammond, Austin Jackman
  */
 
 public class MyBlockingQueue<T> {
