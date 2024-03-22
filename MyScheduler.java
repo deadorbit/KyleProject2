@@ -1,5 +1,4 @@
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -8,7 +7,21 @@ import java.util.concurrent.*;
  * @author: Joshua Hammond, Austin Jackman
  */
 
-public class MyBlockingQueue<T> {
+
+public class MyScheduler<T> {
+    int numJobs;
+    String property;
+
+    int avgWaitTime;
+    int maxWait;
+    int combined;
+    int deadlines;
+
+    public MyScheduler(int numJobs, String property) {
+        this.numJobs = numJobs;
+        this.property = property;
+
+    }
 
 }
 
