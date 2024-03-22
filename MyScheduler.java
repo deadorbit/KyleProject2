@@ -3,7 +3,7 @@ import java.util.Queue;
 import java.util.concurrent.*;
 
 /**
- * Implements a multi-token semaphore.
+ * Implements a scheudler
  * 
  * @author: Joshua Hammond, Austin Jackman
  */
