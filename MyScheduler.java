@@ -16,12 +16,16 @@ public class MyScheduler {
     int combined;
     int deadlines;
 
-    LinkedBlockingQueue<Job> blockingQueue;
+    LinkedBlockingQueue<Job> outQueue;
+    LinkedBlockingQueue<Job> inQueue;
+    Semaphore jobAdder;
 
     public MyScheduler(int numJobs, String property) {
         this.numJobs = numJobs;
         this.property = property;
-        this.blockingQueue = new LinkedBlockingQueue<>(numJobs);
+        this.inQueue = new LinkedBlockingQueue<>(numJobs);
+        this.outQueue = new LinkedBlockingQueue<>(numJobs);
+        this.jobAdder = new Semaphore(1);
 
     }
 
@@ -31,12 +35,12 @@ public class MyScheduler {
      * You will likely want to create this queue in your constructor.
      */
     public LinkedBlockingQueue<Job> getOutgoingQueue() {
-        return new LinkedBlockingQueue<>();
+        return this.outQueue;
     }
 
     // We recieve jobs as they are created and pass them to the outgoing queue
     public LinkedBlockingQueue<Job> getIncomingQueue() {
-        return this.blockingQueue;
+        return this.inQueue;
     }
 
     /*
@@ -44,13 +48,15 @@ public class MyScheduler {
      * You will put jobs on the outgoing queue in the order of your choosing.
      */
     public void run() {
-        while (true) {
+        while (numJobs >= 0) {
             try {
-                Thread.sleep(1);
-                Job job = this.getIncomingQueue().poll();
-                System.out.println(job.getLength());
+                Job job = inQueue.poll();
+                // System.out.println(job.getLength());
+                // Thread.sleep(job.getLength());
+                outQueue.put(job);
+                numJobs--;
             } catch (Exception e) {
-                System.out.println(e);
+                // pass
             }
         }
     }
