@@ -46,74 +46,80 @@ public class MyScheduler {
     }
 
     public LinkedBlockingQueue<Job> scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
-        ArrayList<Job> tempArray = new ArrayList<Job>(); // Temporary Array
-        LinkedBlockingQueue<Job> tempQueue = new LinkedBlockingQueue<Job>(numJobs);
+        try {
+            ArrayList<Job> tempArray = new ArrayList<Job>(); // Temporary Array
+            LinkedBlockingQueue<Job> tempQueue = new LinkedBlockingQueue<Job>(numJobs);
 
-        long batchWaitTime = 0;
+            long batchWaitTime = 0;
 
-        this.deadlines.clear();
-        this.closestDeadline = -1;
+            this.deadlines.clear();
+            this.closestDeadline = -1;
 
-        for (Job s : Jobs)
-            tempArray.add(s);
+            for (Job s : Jobs)
+                tempArray.add(s);
 
-        // Do math to get statistics
-        for (int i = 0; i <= tempArray.size(); i++) {
-            this.numJobs++;
-            Job job = tempArray.get(i);
-            long jobDeadline = job.getDeadline() - job.getTimeCreated();
-            long jobWaitTime = job.getWaitTime();
-            long jobLength = job.getLength();
+            // Do math to get statistics
+            for (int i = 0; i < tempArray.size(); i++) {
+                this.numJobs++;
+                Job job = tempArray.get(i);
 
-            // Job is about to expire and deadline can still be finished in time?
-            if (jobDeadline < this.closestDeadline && jobLength + jobWaitTime < jobDeadline) {
-                this.closestDeadline = jobDeadline;
+                long jobDeadline = job.getDeadline() - job.getTimeCreated();
+                long jobWaitTime = job.getWaitTime();
+                long jobLength = job.getLength();
+
+                // Job is about to expire and deadline can still be finished in time?
+                if (jobDeadline < this.closestDeadline && jobLength + jobWaitTime < jobDeadline) {
+                    this.closestDeadline = jobDeadline;
+                }
+                ;
+
+                batchWaitTime += jobWaitTime;
+
+                deadlines.add(job.getDeadline());
             }
-            ;
 
-            batchWaitTime += jobWaitTime;
+            batchWaitTime = batchWaitTime / tempArray.size();
 
-            deadlines.add(job.getDeadline());
-        }
+            // Use statistics to predict which algorithm needs to be used
 
-        batchWaitTime = batchWaitTime / tempArray.size();
-
-        // Use statistics to predict which algorithm needs to be used
-
-        // Wait time is rising
-        int waitThreshold = 5;
-        if (batchWaitTime - this.avgWaitTime > waitThreshold) {
-            this.property = "LWF";
-        }
-
-        if (this.closestDeadline > 0) {
-            this.property = "SDF";
-        }
-
-        this.property = "SJF";
-
-        switch (this.property) {
-            case "SDF":
-                tempArray = shortestDeadlineFirst(tempArray);
-                break;
-            case "SJF":
-                tempArray = shortestJobFirst(tempArray);
-            case "LWF":
-                tempArray = longestWaitTimeFirst(tempArray);
-            default:
-                break;
-        }
-
-        for (int i = 0; i <= tempArray.size(); i++) {
-            try {
-                tempQueue.put(tempArray.get(i));
-            } catch (Exception e) {
-                System.out.println(e);
+            // Wait time is rising
+            int waitThreshold = 5;
+            if (batchWaitTime - this.avgWaitTime > waitThreshold) {
+                this.property = "LWF";
             }
-        }
 
-        this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
-        return tempQueue;
+            if (this.closestDeadline > 0) {
+                this.property = "SDF";
+            }
+
+            this.property = "SJF";
+
+            switch (this.property) {
+                case "SDF":
+                    tempArray = shortestDeadlineFirst(tempArray);
+                    break;
+                case "SJF":
+                    tempArray = shortestJobFirst(tempArray);
+                case "LWF":
+                    tempArray = longestWaitTimeFirst(tempArray);
+                default:
+                    break;
+            }
+
+            for (int i = 0; i < tempArray.size(); i++) {
+                try {
+                    tempQueue.put(tempArray.get(i));
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+
+            this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
+            return tempQueue;
+        } catch (Exception e) {
+            System.out.println("SCHEUDLING EXECPTION: " + e);
+            return Jobs;
+        }
     }
 
     public ArrayList<Job> shortestDeadlineFirst(ArrayList<Job> Jobs) {
@@ -154,12 +160,17 @@ public class MyScheduler {
     public void run() {
         while (numJobs >= 0) {
             try {
-                Job job = inQueue.poll();
-                scheudlingAlgorithm(inQueue);
-                outQueue.put(job);
-                numJobs--;
+                if (inQueue.size() > 0) {
+                    System.out.println("INQUEUE SIZE: " + inQueue.size());
+                    inQueue = scheudlingAlgorithm(inQueue);
+                    Job job = inQueue.poll();
+                    if (job != null) {
+                        outQueue.put(inQueue.poll());
+                        numJobs--;
+                    }
+                }
             } catch (Exception e) {
-                System.out.println(e);
+                System.out.println("RUN EXECEPTION: " + e);
             }
         }
     }
