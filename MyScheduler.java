@@ -21,15 +21,12 @@ public class MyScheduler {
     LinkedBlockingQueue<Job> outQueue;
     LinkedBlockingQueue<Job> inQueue;
     LinkedBlockingQueue<Job> tempQueue;
-    Semaphore jobAdder;
 
     public MyScheduler(int numJobs, String property) {
         this.numJobs = numJobs;
         this.property = property;
         this.inQueue = new LinkedBlockingQueue<>(numJobs);
         this.outQueue = new LinkedBlockingQueue<>(numJobs);
-        this.jobAdder = new Semaphore(1);
-
     }
 
     /*
@@ -46,16 +43,17 @@ public class MyScheduler {
         return this.inQueue;
     }
 
-    public LinkedBlockingQueue<Job> scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
+    public Job scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
         if (Jobs.size() == 0)
-            return Jobs;
+            return null;
+        else if (outQueue.peek() == null) {
+            return Jobs.peek();
+        }
+
         try {
             ArrayList<Job> tempArray = new ArrayList<Job>(); // Temporary Array
-            LinkedBlockingQueue<Job> tempQueue = new LinkedBlockingQueue<Job>(numJobs);
 
             long batchWaitTime = 0;
-
-            this.deadlines.clear();
             this.closestDeadline = -1;
 
             for (Job s : Jobs)
@@ -63,7 +61,6 @@ public class MyScheduler {
 
             // Do math to get statistics
             for (int i = 0; i < tempArray.size(); i++) {
-                this.numJobs++;
                 Job job = tempArray.get(i);
 
                 long jobDeadline = job.getDeadline() - job.getTimeCreated();
@@ -74,11 +71,8 @@ public class MyScheduler {
                 if (jobDeadline < this.closestDeadline && jobLength + jobWaitTime < jobDeadline) {
                     this.closestDeadline = jobDeadline;
                 }
-                ;
 
                 batchWaitTime += jobWaitTime;
-
-                deadlines.add(job.getDeadline());
             }
 
             batchWaitTime = batchWaitTime / tempArray.size();
@@ -111,14 +105,10 @@ public class MyScheduler {
 
             this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
 
-            for (int i = 0; i < tempArray.size(); i++) {
-                tempQueue.add(tempArray.get(i));
-            }
-
-            return tempQueue;
+            return tempArray.get(0);
         } catch (Exception e) {
             System.out.println("SCHEUDLING EXECPTION: " + e);
-            return Jobs;
+            return null;
         }
     }
 
@@ -158,17 +148,20 @@ public class MyScheduler {
      * You will put jobs on the outgoing queue in the order of your choosing.
      */
     public void run() {
-        while (numJobs >= 0) {
+        while (numJobs > 0) {
             // System.out.println("JOBS REMAINING: " + numJobs);
             try {
                 if (inQueue.size() > 0) {
-                    System.out.println("INQUEUE SIZE: " + inQueue.size());
-                    inQueue = scheudlingAlgorithm(inQueue);
-                    outQueue.put(inQueue.poll());
-                    numJobs--;
+                    // System.out.println("INQUEUE SIZE: " + inQueue.size());
+                    Job job = scheudlingAlgorithm(inQueue);
+                    if (job != null) {
+                        inQueue.poll();
+                        outQueue.put(job);
+                        numJobs--;
+                    }
                 }
             } catch (Exception e) {
-                System.out.println("RUN EXECEPTION: " + e);
+                // System.out.println("RUN EXECEPTION: " + e);
             }
         }
     }
