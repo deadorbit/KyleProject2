@@ -20,6 +20,7 @@ public class MyScheduler {
 
     LinkedBlockingQueue<Job> outQueue;
     LinkedBlockingQueue<Job> inQueue;
+    LinkedBlockingQueue<Job> tempQueue;
     Semaphore jobAdder;
 
     public MyScheduler(int numJobs, String property) {
@@ -46,6 +47,8 @@ public class MyScheduler {
     }
 
     public LinkedBlockingQueue<Job> scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
+        if (Jobs.size() == 0)
+            return Jobs;
         try {
             ArrayList<Job> tempArray = new ArrayList<Job>(); // Temporary Array
             LinkedBlockingQueue<Job> tempQueue = new LinkedBlockingQueue<Job>(numJobs);
@@ -106,15 +109,12 @@ public class MyScheduler {
                     break;
             }
 
+            this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
+
             for (int i = 0; i < tempArray.size(); i++) {
-                try {
-                    tempQueue.put(tempArray.get(i));
-                } catch (Exception e) {
-                    System.out.println(e);
-                }
+                tempQueue.add(tempArray.get(i));
             }
 
-            this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
             return tempQueue;
         } catch (Exception e) {
             System.out.println("SCHEUDLING EXECPTION: " + e);
@@ -152,25 +152,23 @@ public class MyScheduler {
         Jobs.sort(sorter);
         return Jobs;
     }
-   
+
     /*
      * You will take jobs from the incoming queue (and probably store them), and
      * You will put jobs on the outgoing queue in the order of your choosing.
      */
     public void run() {
         while (numJobs >= 0) {
+            // System.out.println("JOBS REMAINING: " + numJobs);
             try {
-                while (inQueue.size() > 0) {
+                if (inQueue.size() > 0) {
                     System.out.println("INQUEUE SIZE: " + inQueue.size());
-                    //inQueue = scheudlingAlgorithm(inQueue);
-                    Job job = inQueue.peek();
-                    if (job != null) {
-                        outQueue.put(inQueue.poll());
-                        numJobs--;
-                    }
+                    inQueue = scheudlingAlgorithm(inQueue);
+                    outQueue.put(inQueue.poll());
+                    numJobs--;
                 }
             } catch (Exception e) {
-                System.out.println("RUN EXCEPTION: " + e);
+                System.out.println("RUN EXECEPTION: " + e);
             }
         }
     }
