@@ -26,7 +26,7 @@ public class MyScheduler {
         this.numJobs = numJobs;
         this.property = property;
         this.inQueue = new LinkedBlockingQueue<>(numJobs);
-        this.outQueue = new LinkedBlockingQueue<>(numJobs);
+        this.outQueue = new LinkedBlockingQueue<>(1);
     }
 
     /*
@@ -47,6 +47,7 @@ public class MyScheduler {
         if (Jobs.size() == 0)
             return null;
         else if (outQueue.peek() == null) {
+            // System.out.println("EMPTEY");
             return Jobs.peek();
         }
 
@@ -151,13 +152,14 @@ public class MyScheduler {
         while (numJobs > 0) {
             // System.out.println("JOBS REMAINING: " + numJobs);
             try {
-                if (inQueue.size() > 0) {
+                if (inQueue.peek() != null) {
                     // System.out.println("INQUEUE SIZE: " + inQueue.size());
                     Job job = scheudlingAlgorithm(inQueue);
                     if (job != null) {
-                        inQueue.poll();
-                        outQueue.put(job);
-                        numJobs--;
+                        if (outQueue.offer(job)) {
+                            inQueue.poll();
+                            numJobs--;
+                        }
                     }
                 }
             } catch (Exception e) {
