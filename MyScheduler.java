@@ -163,7 +163,7 @@ public class MyScheduler {
                 if (inQueue.size() > 0) {
                     System.out.println("INQUEUE SIZE: " + inQueue.size());
                     inQueue = scheudlingAlgorithm(inQueue);
-                    Job job = inQueue.poll();
+                    Job job = inQueue.peek();
                     if (job != null) {
                         outQueue.put(inQueue.poll());
                         numJobs--;
