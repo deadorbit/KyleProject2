@@ -45,7 +45,7 @@ public class MyScheduler {
         return this.inQueue;
     }
 
-    public void scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
+    public synchronized void scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
         if (Jobs.size() == 0) {
             // No Jobs
             return;
@@ -91,6 +91,7 @@ public class MyScheduler {
             }
 
             this.property = "SJF";
+            System.out.println(this.property);
 
             switch (this.property) {
                 case "SDF":
@@ -151,9 +152,9 @@ public class MyScheduler {
     public void run() {
         new Thread(() -> {
             while (this.numJobs > 0) {
-                scheudlingAlgorithm(inQueue);
+                scheudlingAlgorithm(this.inQueue);
             }
-        });
+        }).start();
         while (numJobs > 0) {
             try {
                 Job job;
@@ -170,6 +171,7 @@ public class MyScheduler {
                         if (!takeSorted) {
                             inQueue.poll();
                         } else {
+                            System.out.println("took sorted");
                             sortedList.removeFirst();
                         }
                         numJobs--;
