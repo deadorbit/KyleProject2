@@ -21,12 +21,14 @@ public class MyScheduler {
     LinkedBlockingQueue<Job> outQueue;
     LinkedBlockingQueue<Job> inQueue;
     LinkedBlockingQueue<Job> tempQueue;
+    ArrayList<Job> sortedList;
 
     public MyScheduler(int numJobs, String property) {
         this.numJobs = numJobs;
         this.property = property;
         this.inQueue = new LinkedBlockingQueue<>(numJobs);
         this.outQueue = new LinkedBlockingQueue<>(1);
+        this.sortedList = new ArrayList<Job>();
     }
 
     /*
@@ -43,12 +45,10 @@ public class MyScheduler {
         return this.inQueue;
     }
 
-    public Job scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
-        if (Jobs.size() == 0)
-            return null;
-        else if (outQueue.peek() == null) {
-            // System.out.println("EMPTEY");
-            return Jobs.peek();
+    public void scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
+        if (Jobs.size() == 0) {
+            // No Jobs
+            return;
         }
 
         try {
@@ -106,10 +106,10 @@ public class MyScheduler {
 
             this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
 
-            return tempArray.get(0);
+            this.sortedList = tempArray;
         } catch (Exception e) {
             System.out.println("SCHEUDLING EXECPTION: " + e);
-            return null;
+            return;
         }
     }
 
@@ -149,21 +149,34 @@ public class MyScheduler {
      * You will put jobs on the outgoing queue in the order of your choosing.
      */
     public void run() {
+        new Thread(() -> {
+            while (this.numJobs > 0) {
+                scheudlingAlgorithm(inQueue);
+            }
+        });
         while (numJobs > 0) {
-            // System.out.println("JOBS REMAINING: " + numJobs);
             try {
-                if (inQueue.peek() != null) {
-                    // System.out.println("INQUEUE SIZE: " + inQueue.size());
-                    Job job = scheudlingAlgorithm(inQueue);
-                    if (job != null) {
-                        if (outQueue.offer(job)) {
+                Job job;
+                boolean takeSorted = false;
+
+                if (!takeSorted) {
+                    job = inQueue.peek();
+                } else {
+                    job = sortedList.getFirst();
+                }
+
+                if (job != null) {
+                    if (outQueue.offer(job)) {
+                        if (!takeSorted) {
                             inQueue.poll();
-                            numJobs--;
+                        } else {
+                            sortedList.removeFirst();
                         }
+                        numJobs--;
                     }
                 }
             } catch (Exception e) {
-                // System.out.println("RUN EXECEPTION: " + e);
+                System.out.println("RUN EXECEPTION: " + e);
             }
         }
     }
