@@ -15,6 +15,7 @@ public class MyScheduler {
     int avgWaitTime = 0;
     int maxWait = 0;
     int combined = 0;
+    long closestDeadline = 0;
     ArrayList<Long> deadlines = new ArrayList<Long>();
 
     LinkedBlockingQueue<Job> outQueue;
@@ -47,7 +48,11 @@ public class MyScheduler {
     public LinkedBlockingQueue<Job> scheudlingAlgorithm(LinkedBlockingQueue<Job> Jobs) {
         ArrayList<Job> tempArray = new ArrayList<Job>(); // Temporary Array
         LinkedBlockingQueue<Job> tempQueue = new LinkedBlockingQueue<Job>(numJobs);
+
+        long batchWaitTime = 0;
+
         this.deadlines.clear();
+        this.closestDeadline = -1;
 
         for (Job s : Jobs)
             tempArray.add(s);
@@ -55,35 +60,87 @@ public class MyScheduler {
         // Do math to get statistics
         for (int i = 0; i <= tempArray.size(); i++) {
             this.numJobs++;
+            Job job = tempArray.get(i);
+            long jobDeadline = job.getDeadline() - job.getTimeCreated();
+            long jobWaitTime = job.getWaitTime();
+            long jobLength = job.getLength();
 
-            this.avgWaitTime += tempArray.get(i).getWaitTime();
-            deadlines.add(tempArray.get(i).getDeadline());
+            // Job is about to expire and deadline can still be finished in time?
+            if (jobDeadline < this.closestDeadline && jobLength + jobWaitTime < jobDeadline) {
+                this.closestDeadline = jobDeadline;
+            }
+            ;
+
+            batchWaitTime += jobWaitTime;
+
+            deadlines.add(job.getDeadline());
         }
 
+        batchWaitTime = batchWaitTime / tempArray.size();
+
         // Use statistics to predict which algorithm needs to be used
-        this.property = "SDF";
+
+        // Wait time is rising
+        int waitThreshold = 5;
+        if (batchWaitTime - this.avgWaitTime > waitThreshold) {
+            this.property = "LWF";
+        }
+
+        if (this.closestDeadline > 0) {
+            this.property = "SDF";
+        }
+
+        this.property = "SJF";
 
         switch (this.property) {
             case "SDF":
                 tempArray = shortestDeadlineFirst(tempArray);
                 break;
-
+            case "SJF":
+                tempArray = shortestJobFirst(tempArray);
+            case "LWF":
+                tempArray = longestWaitTimeFirst(tempArray);
             default:
                 break;
         }
 
         for (int i = 0; i <= tempArray.size(); i++) {
-
+            try {
+                tempQueue.put(tempArray.get(i));
+            } catch (Exception e) {
+                System.out.println(e);
+            }
         }
 
+        this.avgWaitTime = (int) ((this.avgWaitTime + batchWaitTime) / 2.0);
         return tempQueue;
-
     }
 
     public ArrayList<Job> shortestDeadlineFirst(ArrayList<Job> Jobs) {
         Comparator<Job> sorter = new Comparator<Job>() {
             public int compare(Job left, Job right) {
-                return Math.toIntExact(left.getDeadline() - right.getDeadline());
+                return Math.toIntExact(
+                        (left.getDeadline() - left.getTimeCreated()) - (right.getDeadline()) - right.getTimeCreated());
+            }
+        };
+        Jobs.sort(sorter);
+        return Jobs;
+    }
+
+    public ArrayList<Job> shortestJobFirst(ArrayList<Job> Jobs) {
+        Comparator<Job> sorter = new Comparator<Job>() {
+            public int compare(Job left, Job right) {
+                return Math.toIntExact(left.getLength() - right.getLength());
+            }
+        };
+        Jobs.sort(sorter);
+        return Jobs;
+    }
+
+    public ArrayList<Job> longestWaitTimeFirst(ArrayList<Job> Jobs) {
+        Comparator<Job> sorter = new Comparator<Job>() {
+            public int compare(Job left, Job right) {
+                return Math.toIntExact(right.getWaitTime() - left.getWaitTime());
             }
         };
         Jobs.sort(sorter);
@@ -98,12 +155,11 @@ public class MyScheduler {
         while (numJobs >= 0) {
             try {
                 Job job = inQueue.poll();
-                // System.out.println(job.getLength());
                 scheudlingAlgorithm(inQueue);
                 outQueue.put(job);
                 numJobs--;
             } catch (Exception e) {
-                // pass
+                System.out.println(e);
             }
         }
     }

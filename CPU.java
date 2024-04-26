@@ -3,40 +3,41 @@ import java.util.concurrent.*;
 
 /**
  * Models a basic CPU that cannot be interrupted.
+ * 
  * @author Kyle Burke
  */
 public class CPU {
-    
-    //fields
-    
-    //whether to print everything that's going on
+
+    // fields
+
+    // whether to print everything that's going on
     private boolean verbosePrinting;
-    
-    //the completed jobs
+
+    // the completed jobs
     private List<Job> completed;
-    
-    //name of this CPU
+
+    // name of this CPU
     private String name;
-    
-    //incoming job list
+
+    // incoming job list
     private BlockingQueue<Job> incoming;
-    
-    //whether this is ready to stop
+
+    // whether this is ready to stop
     private boolean readyToStop;
-    
-    //only opens up when it's completed
+
+    // only opens up when it's completed
     private Semaphore isDone;
-    
-    //start time of the whole cpu
+
+    // start time of the whole cpu
     private long startTime;
-    
-    //time this spent running
+
+    // time this spent running
     private long runningTime;
-    
-    //the number of jobs this will process
+
+    // the number of jobs this will process
     private int numJobs;
-    
-    //constructor
+
+    // constructor
     public CPU(String name, BlockingQueue<Job> incoming, boolean verbosePrinting) {
         this.name = name;
         this.incoming = incoming;
@@ -46,32 +47,31 @@ public class CPU {
         this.isDone = new Semaphore(0);
         this.numJobs = -1;
     }
-    
+
     public void blockUntilDone() {
         this.isDone.acquireUninterruptibly();
         this.isDone.release();
     }
-    
+
     public void setNumJobs(int numJobs) {
         this.numJobs = numJobs;
     }
-    
-    
-    //ends this when the incoming queue is empty
+
+    // ends this when the incoming queue is empty
     public void shutDown() {
         this.readyToStop = true;
     }
-    
-    //starts this CPU running
+
+    // starts this CPU running
     public void start() {
         this.startTime = System.currentTimeMillis();
         Thread t = new Thread(() -> run());
         t.start();
         System.out.println("CPU " + name + " is chugging along!");
     }
-    
+
     private void run() {
-        //while (!this.readyToStop || this.incoming.getNumElements() > 0) {
+        // while (!this.readyToStop || this.incoming.getNumElements() > 0) {
         while (this.completed.size() < this.numJobs) {
             try {
                 Job next = this.incoming.take();
@@ -79,17 +79,18 @@ public class CPU {
                     System.out.println("Next job on " + this.name + ": " + next.toString());
                 }
                 /*
-                long runningTime = next.getLength();
-                next.run();
-                try {
-                    Thread.sleep(runningTime);
-                } catch (Exception e) {
-                
-                }
-                next.pause();
-                if (!next.isDone()) {
-                    System.err.println("Job didn't finish!!!!");
-                }*/
+                 * long runningTime = next.getLength();
+                 * next.run();
+                 * try {
+                 * Thread.sleep(runningTime);
+                 * } catch (Exception e) {
+                 * 
+                 * }
+                 * next.pause();
+                 * if (!next.isDone()) {
+                 * System.err.println("Job didn't finish!!!!");
+                 * }
+                 */
                 next.run(this);
                 if (next.getLength() > 0) {
                     completed.add(next);
@@ -109,12 +110,16 @@ public class CPU {
         long totalLength = this.getTotalJobLengths();
         long totalLatency = this.getTotalLatency();
         int numMadeDeadline = this.getTotalDeadlinesMade();
-        System.out.println("CPU " + this.name + " finished!\n  - Total lengths: " + totalLength + "\n  - Total latency: " + totalLatency + "\n  - Utility: " + this.getUtilityPercentage() + "%\n  - Total wait time: " + this.getTotalWaitTime() + "\n  - Average wait time: " + this.getAverageWaitTime() + "\n  - Max wait time: " + this.getMaxWaitTime() + "\n  - # Made deadline: " + numMadeDeadline + "/" + this.completed.size());
+        System.out.println("CPU " + this.name + " finished!\n  - Total lengths: " + totalLength
+                + "\n  - Total latency: " + totalLatency + "\n  - Utility: " + this.getUtilityPercentage()
+                + "%\n  - Total wait time: " + this.getTotalWaitTime() + "\n  - Average wait time: "
+                + this.getAverageWaitTime() + "\n  - Max wait time: " + this.getMaxWaitTime()
+                + "\n  - # Made deadline: " + numMadeDeadline + "/" + this.completed.size());
     }
-    
+
     public long getTotalJobLengths() {
         long total = 0;
-        //this shouldn't be executed until it's done...
+        // this shouldn't be executed until it's done...
         this.isDone.acquireUninterruptibly();
         for (Job job : this.completed) {
             total += job.getLength();
@@ -122,10 +127,10 @@ public class CPU {
         this.isDone.release();
         return total;
     }
-    
+
     public long getTotalLatency() {
         long total = 0;
-        //this shouldn't be executed until it's done...
+        // this shouldn't be executed until it's done...
         this.isDone.acquireUninterruptibly();
         for (Job job : this.completed) {
             total += job.getLatency();
@@ -133,7 +138,7 @@ public class CPU {
         this.isDone.release();
         return total;
     }
-    
+
     public int getTotalDeadlinesMade() {
         int total = 0;
         this.isDone.acquireUninterruptibly();
@@ -145,11 +150,11 @@ public class CPU {
         this.isDone.release();
         return total;
     }
-    
+
     public long getTotalWaitTime() {
         return this.getTotalLatency() - this.getTotalJobLengths();
     }
-    
+
     public long getMaxWaitTime() {
         long max = 0;
         this.isDone.acquireUninterruptibly();
@@ -162,7 +167,7 @@ public class CPU {
         this.isDone.release();
         return max;
     }
-    
+
     public List<Job> getCompleted() {
         List<Job> completedCopy = new ArrayList<>();
         for (Job job : this.completed) {
@@ -170,21 +175,21 @@ public class CPU {
         }
         return completedCopy;
     }
-    
+
     public int getNumJobsCompleted() {
         return this.completed.size();
     }
-    
+
     public long getAverageWaitTime() {
         return this.getTotalWaitTime() / this.getNumJobsCompleted();
     }
-    
+
     public long getEfficiency() {
         return (100 * this.getTotalJobLengths() / this.getTotalLatency());
     }
-    
+
     public int getUtilityPercentage() {
         return (int) (100 * this.getTotalJobLengths() / this.runningTime);
     }
 
-} //end of CPU.java
+} // end of CPU.java
