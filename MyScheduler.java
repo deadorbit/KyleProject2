@@ -152,7 +152,7 @@ public class MyScheduler {
         Jobs.sort(sorter);
         return Jobs;
     }
-
+   
     /*
      * You will take jobs from the incoming queue (and probably store them), and
      * You will put jobs on the outgoing queue in the order of your choosing.
@@ -160,9 +160,9 @@ public class MyScheduler {
     public void run() {
         while (numJobs >= 0) {
             try {
-                if (inQueue.size() > 0) {
+                while (inQueue.size() > 0) {
                     System.out.println("INQUEUE SIZE: " + inQueue.size());
-                    inQueue = scheudlingAlgorithm(inQueue);
+                    //inQueue = scheudlingAlgorithm(inQueue);
                     Job job = inQueue.peek();
                     if (job != null) {
                         outQueue.put(inQueue.poll());
@@ -170,7 +170,7 @@ public class MyScheduler {
                     }
                 }
             } catch (Exception e) {
-                System.out.println("RUN EXECEPTION: " + e);
+                System.out.println("RUN EXCEPTION: " + e);
             }
         }
     }
