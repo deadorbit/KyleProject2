@@ -3,7 +3,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * Implements a scheudler
+ * Implements a scheduler
  * 
  * @author: Joshua Hammond, Austin Jackman
  */
@@ -98,7 +98,7 @@ public class MyScheduler {
                     //System.out.println("combined");
                     break;
                 case "avg wait":
-                    tempArray = shortestJobFirst(tempArray);
+                    tempArray = averageWait(tempArray);
                     //System.out.println("combined");
                     break;
                 case "max wait":
@@ -118,7 +118,7 @@ public class MyScheduler {
         }
     }
 
-    public ArrayList<Job> shortestDeadlineFirst(ArrayList<Job> Jobs) {
+    /*public ArrayList<Job> shortestDeadlineFirst(ArrayList<Job> Jobs) {
         Comparator<Job> sorter = new Comparator<Job>() {
             public int compare(Job left, Job right) {
                 return Math.toIntExact(
@@ -127,7 +127,19 @@ public class MyScheduler {
         };
         Jobs.sort(sorter);
         return Jobs;
+    }*/
+    public ArrayList<Job> shortestDeadlineFirst(ArrayList<Job> Jobs) {
+        Comparator<Job> sorter = new Comparator<Job>() {
+            public int compare(Job left, Job right) {
+                long deadlineDiff = left.getDeadline() - right.getDeadline();
+                long timeCreatedDiff = left.getTimeCreated() - right.getTimeCreated();
+                return Long.compare(deadlineDiff - timeCreatedDiff, 0L);
+            }
+        };
+        Jobs.sort(sorter);
+        return Jobs;
     }
+
 
     public ArrayList<Job> shortestJobFirst(ArrayList<Job> Jobs) {
         Comparator<Job> sorter = new Comparator<Job>() {
@@ -148,10 +160,19 @@ public class MyScheduler {
         Jobs.sort(sorter);
         return Jobs;
     }
-    public ArrayList<Job> longestWaitTimeFirst(ArrayList<Job> Jobs) {
-        
-    
+    public ArrayList<Job> averageWait(ArrayList<Job> Jobs) {
+        Comparator<Job> sorter = new Comparator<Job>() {
+            
+            public int compare(Job left, Job right) {
+                
+                return (int) left.getLength() - (int) right.getLength();  
+            }
+        };
+        Jobs.sort(sorter); 
+        return Jobs;  
     }
+    
+    
     /*
      * You will take jobs from the incoming queue (and probably store them), and
      * You will put jobs on the outgoing queue in the order of your choosing.
